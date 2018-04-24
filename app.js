@@ -1,8 +1,13 @@
 var express = require('express')
 var path = require('path')
 var bodyParser = require('body-parser')
+var mongoose = require('mongoose')
+var Movie = require('./models/movie')
+var _ = require('underscore')
 var port = process.env.PORT || 3000
 var app = express()
+
+mongoose.connect('mongodb://localhost/movie')
 
 app.set('views', './views/pages') // 设置应用视图根目录， 可以接受一个数据，会按照数组顺序查找文件
 app.set('view engine', 'jade') // 设置默认的模板引擎
@@ -19,49 +24,25 @@ app.use(function(req, res, next) {
 
 // router
 app.get('/', function (req, res) {
-  res.render('index', {
-    title: '电影首页',
-    movies: [{
-      title: '机械战警',
-      _id: 1,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    },{
-      title: '机械战警',
-      _id: 2,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    },{
-      title: '机械战警',
-      _id: 3,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    },{
-      title: '机械战警',
-      _id: 4,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    },{
-      title: '机械战警',
-      _id: 5,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    },{
-      title: '机械战警',
-      _id: 6,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-    }]
+  Movie.fetch(function(err, movies) {
+    if (err) {
+      console.log(err)
+    }
+    res.render('index', {
+      title: '电影首页',
+      movies: movies
+    })
   })
+
 })
 
 app.get('/movie/:id', function (req, res) {
-  res.render('detail', {
-    title: '电影详情页',
-    movie: {
-      doctor: '何塞·帕迪里亚',
-      country: '美国',
-      title: '机械战警',
-      year: 2014,
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5',
-      language: '英语',
-      flash: 'blob:https://baike.baidu.com/f692ccc3-17ef-49e6-8261-831f4efb6af9',
-      summary: '《机械战警》是由何塞·帕迪里亚执导，乔尔·金纳曼、塞缪尔·杰克逊、加里·奥德曼等主演的一部科幻电影，改编自1987年保罗·范霍文执导的同名电影。影片于2014年2月12日在美国上映，2014年2月28日在中国大陆上映。影片的故事背景与原版基本相同，故事设定在2028年的底特律，男主角亚历克斯·墨菲是一名正直的警察，被坏人安装在车上的炸弹炸成重伤，为了救他，OmniCorp公司将他改造成了生化机器人“机器战警”，代表着美国司法的未来。'
-    }
+  var id = req.params.id
+  Movie.findById(id, function(err, movie){
+    res.render('detail', {
+      title: '电影详情页',
+      movie: movie
+    })
   })
 })
 
@@ -81,18 +62,72 @@ app.get('/admin/movie', function (req, res) {
   })
 })
 
+// 更新电影
+app.get('/admin/update/:id', function(req, res) {
+  var id = req.params.id
+  if(id) {
+    Movie.findById(id, function(err, movie) {
+      res.render('admin', {
+        title: '天猫电影 后台更新页',
+        movie: movie
+      })
+    })
+  }
+})
+
+// 新增、修改电影
+app.post('admin/movie/new', function (req, res) {
+  var id = req.body._id
+  var movieObj = req.body
+  var _movie
+
+  if (id !== 'undefined') {
+    Movie.findById(id, function(err, movie){
+      if (err) {
+        console.log(err)
+      }else{
+        _movie = _.extend(movie, movieObj)
+        _movie.save(function(err, movie) {
+          if (err) {
+            console.log(err)
+          }else{
+            res.redirect('/movie/'+movie._id)
+          }
+        })
+      }
+    })
+  }else{
+    // 调用模型
+    _movie = new Movie({
+      doctor: movieObj.doctor,
+      title: movieObj.title,
+      country: movieObj.country,
+      language: movieObj.language,
+      year: movieObj.year,
+      poster: movieObj.poster,
+      summary: movieObj.summary,
+      flash: movieObj.flash,
+    })
+
+    _movie.save(function(err, movie) {
+      if (err) {
+        console.log(err)
+      }else{
+        res.redirect('/movie/' + movie._id)
+      }
+    })
+  }
+})
+
 app.get('/admin/list', function (req, res) {
-  res.render('list', {
-    title: '电影列表页',
-    movies: [{
-      _id: 1,
-      doctor: '何塞·帕迪里亚',
-      country: '美国',
-      title: '机械战警',
-      year: 2014,
-      language: '英语',
-      poster: 'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5',
-      summary: '《机械战警》是由何塞·帕迪里亚执导，乔尔·金纳曼、塞缪尔·杰克逊、加里·奥德曼等主演的一部科幻电影，改编自1987年保罗·范霍文执导的同名电影。影片于2014年2月12日在美国上映，2014年2月28日在中国大陆上映。影片的故事背景与原版基本相同，故事设定在2028年的底特律，男主角亚历克斯·墨菲是一名正直的警察，被坏人安装在车上的炸弹炸成重伤，为了救他，OmniCorp公司将他改造成了生化机器人“机器战警”，代表着美国司法的未来。'
-    }]
+  Movie.fetch(function(err, movies){
+    if (err) {
+      console.log(err)
+    }else{
+      res.render('list', {
+        title: '电影列表页',
+        movies: movies
+      })
+    }
   })
 })

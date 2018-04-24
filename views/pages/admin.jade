@@ -4,6 +4,7 @@ block content
   .container
     .row
       form.form-horizontal(method="post", action="/admin/movie/new", style="width:100%;")
+        input(type="hidden", name="movie[_id]", value="#{movie[_id]}")
         .form-group
           label.col-md-2.control-label(for="inputTitle") 电影名字
           .col-md-10
