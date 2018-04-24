@@ -1,0 +1,22 @@
+{
+  "name": "node-movie",
+  "description": "使用node+mogodb+express+bootstrap构建一个前后端的电影网站",
+  "main": "app.js",
+  "authors": [
+    "wangweiwei <will_workhard@163.com>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/Willworkgogogo/Node-Movie",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^4.1.0",
+    "jquery": "^3.3.1",
+    "moment": "^2.22.1"
+  }
+}
